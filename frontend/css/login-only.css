@@ -60,8 +60,8 @@ body {
 .doctor-image {
   position: relative;
   z-index: 2;
-  width: 300px;
-  height: 250px;
+  width: 450px;
+  height: 420px;
   display: flex;
   align-items: center;
   justify-content: center;
