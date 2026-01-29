@@ -4,9 +4,20 @@ document.addEventListener("DOMContentLoaded", function () {
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
   const rememberCheckbox = document.getElementById("remember");
+
+  if (!loginForm || !emailInput || !passwordInput) {
+    console.error("Required form elements not found");
+    return;
+  }
+
   const loginBtn = loginForm.querySelector(".login-btn");
-  const btnLoader = loginBtn.querySelector(".btn-loader");
-  const btnText = loginBtn.querySelector("span");
+  const btnLoader = loginBtn ? loginBtn.querySelector(".btn-loader") : null;
+  const btnText = loginBtn ? loginBtn.querySelector("span") : null;
+
+  if (!loginBtn) {
+    console.error("Login button not found");
+    return;
+  }
 
   // Xử lý submit form
   loginForm.addEventListener("submit", async function (e) {
@@ -25,39 +36,67 @@ document.addEventListener("DOMContentLoaded", function () {
     showLoading(true);
 
     try {
-      // Gửi request đăng nhập
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-          remember: remember,
-        }),
-      });
+      // Check registered user in localStorage (for demo)
+      const registeredUser = localStorage.getItem("registeredUser");
 
-      const data = await response.json();
+      if (registeredUser) {
+        const userData = JSON.parse(registeredUser);
 
-      if (response.ok) {
-        // Đăng nhập thành công
-        showSuccess("Đăng nhập thành công!");
+        // Simple demo authentication
+        if (userData.email === email) {
+          // Đăng nhập thành công
+          showSuccess("Đăng nhập thành công!");
 
-        // Lưu token
-        if (remember) {
-          localStorage.setItem("authToken", data.token);
+          // Lưu token demo
+          const token = "demo_token_" + Date.now();
+          if (remember) {
+            localStorage.setItem("authToken", token);
+            localStorage.setItem("currentUser", JSON.stringify(userData));
+          } else {
+            sessionStorage.setItem("authToken", token);
+            sessionStorage.setItem("currentUser", JSON.stringify(userData));
+          }
+
+          // Chuyển hướng sau 1 giây
+          setTimeout(() => {
+            window.location.href = "../index.html";
+          }, 1000);
         } else {
-          sessionStorage.setItem("authToken", data.token);
+          showError("Email hoặc mật khẩu không đúng!");
         }
-
-        // Chuyển hướng sau 1 giây
-        setTimeout(() => {
-          window.location.href = "/dashboard";
-        }, 1000);
       } else {
-        // Đăng nhập thất bại
-        showError(data.message || "Đăng nhập thất bại!");
+        // Demo login with default accounts
+        const demoAccounts = [
+          { email: "admin@healthcare.vn", password: "123456", name: "Admin" },
+          {
+            email: "user@healthcare.vn",
+            password: "123456",
+            name: "User Demo",
+          },
+        ];
+
+        const demoUser = demoAccounts.find(
+          (acc) => acc.email === email && acc.password === password,
+        );
+
+        if (demoUser) {
+          showSuccess("Đăng nhập thành công!");
+
+          const token = "demo_token_" + Date.now();
+          if (remember) {
+            localStorage.setItem("authToken", token);
+            localStorage.setItem("currentUser", JSON.stringify(demoUser));
+          } else {
+            sessionStorage.setItem("authToken", token);
+            sessionStorage.setItem("currentUser", JSON.stringify(demoUser));
+          }
+
+          setTimeout(() => {
+            window.location.href = "../index.html";
+          }, 1000);
+        } else {
+          showError("Email hoặc mật khẩu không đúng!");
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -136,14 +175,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Hiển thị loading
   function showLoading(show) {
+    if (!loginBtn) return;
+
     if (show) {
       loginBtn.disabled = true;
-      btnText.style.visibility = "hidden";
-      btnLoader.style.display = "block";
+      if (btnText) btnText.style.visibility = "hidden";
+      if (btnLoader) btnLoader.style.display = "block";
     } else {
       loginBtn.disabled = false;
-      btnText.style.visibility = "visible";
-      btnLoader.style.display = "none";
+      if (btnText) btnText.style.visibility = "visible";
+      if (btnLoader) btnLoader.style.display = "none";
     }
   }
 
@@ -254,14 +295,32 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
+// Toggle password visibility
+function togglePassword() {
+  const passwordInput = document.getElementById("password");
+  const toggleIcon = document.querySelector(".password-toggle");
+
+  if (!passwordInput || !toggleIcon) return;
+
+  if (passwordInput.type === "password") {
+    passwordInput.type = "text";
+    toggleIcon.classList.remove("fa-eye-slash");
+    toggleIcon.classList.add("fa-eye");
+  } else {
+    passwordInput.type = "password";
+    toggleIcon.classList.remove("fa-eye");
+    toggleIcon.classList.add("fa-eye-slash");
+  }
+}
+
 // Kiểm tra trạng thái đăng nhập khi load trang
 document.addEventListener("DOMContentLoaded", function () {
   const token =
     localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
 
   if (token) {
-    // Nếu đã đăng nhập, chuyển hướng về dashboard
-    window.location.href = "/dashboard";
+    // Nếu đã đăng nhập, chuyển hướng về trang chủ
+    window.location.href = "../index.html";
   }
 });
 
